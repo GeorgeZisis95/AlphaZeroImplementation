@@ -4,48 +4,44 @@ warnings.filterwarnings("ignore", ".*Applied workaround*.",)
 
 import numpy as np
 import torch
+import multiprocessing
 
 from tictactoe import TicTacToe
 from model import ResNet
 from mcts import MonteCarloTreeSearch
-
+from agent import AlphaZero
 from config import args
 
-print(f"Args: {args}")
+if __name__ == "__main__":
+    multiprocessing.set_start_method("spawn", force=True)    
+    np.set_printoptions(suppress=True)
 
-# Initialize game
-game = TicTacToe()
-state = game.get_initial_state()
+    # Initialize game
+    game = TicTacToe()
 
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-print(f"The device we use is: {device}")
+    print("===> Building Model...")
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    model = ResNet(game, device, input_channels=args.input_channels, filters=args.filters, res_blocks=args.res_blocks)
+    print(f"...Device: {device}")
+    if device == "cuda":
+        model = torch.nn.DataParallel(model)
+        torch.backends.cudnn.benchmark = True
+    optimizer = torch.optim.Adam(model.parameters(), lr=args.lr, weight_decay=args.weight_decay)
 
-model = ResNet(game, device=device, input_channels=3, filters=64, res_blocks=9)
-mcts = MonteCarloTreeSearch(game=game, args=args, model=model)
+    print("===> Getting the correct iteration...")
+    if args.iteration != 1:
+        model.load_state_dict(torch.load(f"./model/{repr(game)}v{args.version}it{args.iteration - 1}.pt"))
+        optimizer.load_state_dict(torch.load(f"./optim/{repr(game)}v{args.version}it{args.iteration - 1}.pt"))
+        print(f"Loaded model {repr(game)}v{args.version}it{args.iteration - 1}pt")
 
-state = game.get_initial_state()
-player = 1
-while True:
-    reward = game.get_reward(state, player=1)
-    if reward is not None:
-        print(f"Game ends with reward: {reward}!")
-        print(f"In state:")
-        game.render(state)
-        break
-    if player == 1:
-        root = mcts.search(state, player)
-        action_probs = root.get_action_probs(game, temperature=0.0)
-    else:
-        root = mcts.search(state, player)
-        action_probs = root.get_action_probs(game, temperature=1.0)
-    print(f"Action Probabilities:{action_probs}")
-    print(f"For state:")
-    game.render(state)
-    
-    action = np.random.choice(game.action_size, p=action_probs)
-    state = game.get_next_state(state, action, player)
-    
-    player = player * -1
+    mcts = MonteCarloTreeSearch(game, args, model)
+    agent = AlphaZero(model, optimizer, game, args, mcts)
 
-# Just with mcts and the resnet the agents seem to defend correctly with probs=1 when
-# they are about to lose
+    if args.get_dataset:
+        agent.create_dataset(parallel=args.parallelize)
+
+    if args.train_model:
+        dataset = agent.include_history()
+        if args.scheduler:
+            agent.scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=args.lr, eta_min=0.001)
+        agent.train_dataset(dataset=dataset)
