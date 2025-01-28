@@ -37,6 +37,7 @@ class TicTacToe:
         return [i for i in range(self.action_size) if valid_moves[i] == 1]
 
     def get_encoded_state(self, state):
+        # Three stacked matrices: [[position of X], [empty position], [position of O]]
         return np.stack((state==1, state==0, state==-1)).astype(np.float32)
 
     def get_canonical_board(self, state, player):
