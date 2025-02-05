@@ -19,7 +19,7 @@ if __name__ == "__main__":
     # Initialize game
     game = TicTacToe()
 
-    print("===> Building Model...")
+    print("===> Building Model.")
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model = ResNet(game, device, input_channels=args.input_channels, filters=args.filters, res_blocks=args.res_blocks)
     print(f"...Device: {device}")
@@ -28,7 +28,7 @@ if __name__ == "__main__":
         torch.backends.cudnn.benchmark = True
     optimizer = torch.optim.SGD(model.parameters(), lr=args.lr, momentum=0.9, weight_decay=args.weight_decay)
 
-    print("===> Getting the correct iteration...")
+    print("===> Getting the correct iteration.")
     if args.iteration != 1:
         model.load_state_dict(torch.load(f"./model/{repr(game)}{args.version}.{args.iteration - 1}.pt"))
         optimizer.load_state_dict(torch.load(f"./optim/{repr(game)}{args.version}.{args.iteration - 1}.pt"))
@@ -41,7 +41,7 @@ if __name__ == "__main__":
         agent.create_dataset(parallel=args.parallelize)
 
     if args.train_model:
-        dataset = agent.include_history()
+        dataset = agent.get_dataset()
         if args.scheduler:
             agent.scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=args.lr, eta_min=0.001)
         agent.train_dataset(dataset=dataset)

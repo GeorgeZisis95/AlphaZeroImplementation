@@ -110,14 +110,14 @@ class AlphaZero:
             self.optimizer.step()
 
     def train_dataset(self, dataset):
-        print("==> Start training...")
+        print("==> Start training.")
         self.model.train()
         for epoch in trange(self.args.num_epochs):
             print(f"Epoch number {epoch} ---------------------------------------------------------------------------")
             self.train(dataset)
             if self.scheduler is not None:
                 self.scheduler.step()
-        print("==> Saving Model...")
+        print("==> Saving Model.")
         if not os.path.isdir("model"):
             os.mkdir("model")
         torch.save(self.model.state_dict(), f"model/{repr(self.game)}{self.args.version}.{self.args.iteration}.pt")
@@ -125,16 +125,9 @@ class AlphaZero:
             os.mkdir("optim")
         torch.save(self.optimizer.state_dict(),  f"optim/{repr(self.game)}{self.args.version}.{self.args.iteration}.pt")
     
-    def include_history(self):
-        dataset = []
-        decay_factor = 1
-        for iteration in range(self.args.iteration, self.args.history, -1):
-            with open(f'datasets/{repr(self.game)}{self.args.version}.{iteration}.pkl', 'rb') as f:
-
-                print(f"Open{repr(self.game)}{self.args.version}.{iteration}.pkl")
-                current_dataset = pickle.load(f)
-                print(f"Dataset has length: {len(current_dataset)} and {len(current_dataset)//decay_factor} elements are added.")
-                dataset += random.sample(current_dataset, int(len(current_dataset) // decay_factor))
-            decay_factor = decay_factor * self.args.dataset_decay_rate
-        print(f"Datasets combined into single dataset of size: {len(dataset)}")
+    def get_dataset(self):
+        with open(f'datasets/{repr(self.game)}{self.args.version}.{self.args.iteration}.pkl', 'rb') as f:
+            print(f"Open{repr(self.game)}{self.args.version}.{self.args.iteration}.pkl")
+            dataset = pickle.load(f)
+            print(f"Dataset has {len(dataset)} elements.")
         return dataset
