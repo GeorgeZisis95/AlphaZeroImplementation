@@ -26,7 +26,7 @@ if __name__ == "__main__":
     if device == "cuda":
         model = torch.nn.DataParallel(model)
         torch.backends.cudnn.benchmark = True
-    optimizer = torch.optim.Adam(model.parameters(), lr=args.lr, weight_decay=args.weight_decay)
+    optimizer = torch.optim.SGD(model.parameters(), lr=args.lr, momentum=0.9, weight_decay=args.weight_decay)
 
     print("===> Getting the correct iteration...")
     if args.iteration != 1:

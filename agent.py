@@ -85,7 +85,6 @@ class AlphaZero:
         print(f"{repr(self.game)}{self.args.version}.{self.args.iteration}.pkl created in {(time.time() - start_time) / 60:.2f} minutes...")
 
     def train(self, dataset):
-        values, policies, losses, disparity, uniformity = [], [], [], [], [] 
         chunks = (len(dataset) - 1) // self.args.batch_size + 1
         for i in range(chunks-1):
             sample = dataset[i*self.args.batch_size:(i+1)*self.args.batch_size]
@@ -110,35 +109,6 @@ class AlphaZero:
             loss.backward()
             self.optimizer.step()
 
-            values.append(value_loss.item())
-            policies.append(policy_loss.item())
-            losses.append(loss.item())
-            
-            target_predictions = policy_targets.squeeze(0).cpu().detach().numpy()
-
-            out_policy = torch.softmax(out_policy, axis=1).squeeze(0).cpu().detach().numpy()
-            out_policy = out_policy * target_predictions
-            out_policy = out_policy / target_predictions
-            out_policy = np.nan_to_num(out_policy)
-            out_policy = out_policy / np.sum(out_policy, axis=1, keepdims=True)
-            out_policy = torch.tensor(out_policy, dtype=torch.float32, device=self.model.device)
-
-            model_predictions = out_policy.squeeze(0).cpu().detach().numpy()
-            
-            mp_without_zeros = model_predictions[model_predictions != 0]
-            tp_without_zeros = target_predictions[target_predictions != 0]
-            
-            uniformity += list(np.isclose(mp_without_zeros, tp_without_zeros, rtol=0, atol=0.05).astype('float64'))
-            disparity += list(np.abs(mp_without_zeros - tp_without_zeros))
-
-            average_value_loss = sum(values) / len(values)
-            average_policy_loss = sum(policies) / len(policies)
-            average_total_loss = sum(losses) / len(losses)
-
-        print(f"Percentage of policy values that are close by a margin of 0.05: {sum(uniformity)/len(uniformity) * 100:.1f}%")
-        print(f"Average disparity between target policy and model prediction: {sum(disparity) / len(disparity):.3f}")
-        print(f"Average value loss: {average_value_loss} / Average policy loss: {average_policy_loss} / Average loss: {average_total_loss}")
-    
     def train_dataset(self, dataset):
         print("==> Start training...")
         self.model.train()
