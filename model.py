@@ -22,7 +22,9 @@ class ResNet(nn.Module):
 									   nn.BatchNorm2d(1),
 									   nn.ReLU(),
 									   nn.Flatten(),
-									   nn.Linear(1 * game.rows * game.columns, 1),
+									   nn.Linear(1 * game.rows * game.columns, 256),
+									   nn.ReLU(),
+									   nn.Linear(256, 1),
 									   nn.Tanh())
 		self.to(device)
 
