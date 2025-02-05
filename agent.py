@@ -80,9 +80,9 @@ class AlphaZero:
         
         if not os.path.isdir('datasets'):
             os.mkdir('datasets')
-        with open(f'datasets/{repr(self.game)}v{self.args.version}it{self.args.iteration}.pkl', 'wb') as f:
+        with open(f'datasets/{repr(self.game)}{self.args.version}.{self.args.iteration}.pkl', 'wb') as f:
             pickle.dump(dataset, f)
-        print(f"{repr(self.game)}v{self.args.version}it{self.args.iteration}.pkl created in {(time.time() - start_time) / 60:.2f} minutes...")
+        print(f"{repr(self.game)}{self.args.version}.{self.args.iteration}.pkl created in {(time.time() - start_time) / 60:.2f} minutes...")
 
     def train(self, dataset):
         values, policies, losses, disparity, uniformity = [], [], [], [], [] 
@@ -150,18 +150,18 @@ class AlphaZero:
         print("==> Saving Model...")
         if not os.path.isdir("model"):
             os.mkdir("model")
-        torch.save(self.model.state_dict(), f"model/{repr(self.game)}v{self.args.version}it{self.args.iteration}.pt")
+        torch.save(self.model.state_dict(), f"model/{repr(self.game)}{self.args.version}.{self.args.iteration}.pt")
         if not os.path.isdir("optim"):
             os.mkdir("optim")
-        torch.save(self.optimizer.state_dict(),  f"optim/{repr(self.game)}v{self.args.version}it{self.args.iteration}.pt")
+        torch.save(self.optimizer.state_dict(),  f"optim/{repr(self.game)}{self.args.version}.{self.args.iteration}.pt")
     
     def include_history(self):
         dataset = []
         decay_factor = 1
         for iteration in range(self.args.iteration, self.args.history, -1):
-            with open(f'datasets/{repr(self.game)}v{self.args.version}it{iteration}.pkl', 'rb') as f:
+            with open(f'datasets/{repr(self.game)}{self.args.version}.{iteration}.pkl', 'rb') as f:
 
-                print(f"Open{repr(self.game)}v{self.args.version}it{iteration}.pkl")
+                print(f"Open{repr(self.game)}{self.args.version}.{iteration}.pkl")
                 current_dataset = pickle.load(f)
                 print(f"Dataset has length: {len(current_dataset)} and {len(current_dataset)//decay_factor} elements are added.")
                 dataset += random.sample(current_dataset, int(len(current_dataset) // decay_factor))

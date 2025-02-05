@@ -30,9 +30,9 @@ if __name__ == "__main__":
 
     print("===> Getting the correct iteration...")
     if args.iteration != 1:
-        model.load_state_dict(torch.load(f"./model/{repr(game)}v{args.version}it{args.iteration - 1}.pt"))
-        optimizer.load_state_dict(torch.load(f"./optim/{repr(game)}v{args.version}it{args.iteration - 1}.pt"))
-        print(f"Loaded model {repr(game)}v{args.version}it{args.iteration - 1}pt")
+        model.load_state_dict(torch.load(f"./model/{repr(game)}{args.version}.{args.iteration - 1}.pt"))
+        optimizer.load_state_dict(torch.load(f"./optim/{repr(game)}{args.version}.{args.iteration - 1}.pt"))
+        print(f"Loaded model {repr(game)}{args.version}.{args.iteration - 1}pt")
 
     mcts = MonteCarloTreeSearch(game, args, model)
     agent = AlphaZero(model, optimizer, game, args, mcts)
